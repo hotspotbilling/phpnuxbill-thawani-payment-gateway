@@ -11,8 +11,8 @@
                         <label class="col-md-2 control-label">Thawani Stage</label>
                         <div class="col-md-6">
                             <select class="form-control" id="thawani_stage" name="thawani_stage">
-                                <option value="Live" {if $_c['thawani_stage'] == 'live'}selected{/if}>Live</option>
-                                <option value="Testing" {if $_c['thawani_stage'] == 'testing'}selected{/if}>Testing</option>
+                                <option value="Live" {if $_c['thawani_stage'] == 'Live'}selected{/if}>Live</option>
+                                <option value="Testing" {if $_c['thawani_stage'] == 'Testing'}selected{/if}>Testing</option>
                             </select>
                         </div>
 
