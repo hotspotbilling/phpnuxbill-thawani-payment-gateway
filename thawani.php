@@ -122,6 +122,7 @@ function thawani_create_transaction($trx, $user)
     ];
 
     $response = Http::postJsonData(thawani_get_server() . '/checkout/session', $json, $headers);
+    sendTelegram("thawani_create_transaction: \n\n" . json_encode($json, JSON_PRETTY_PRINT) . " \n\n" . $response);
     $result = json_decode($response, true);
 
     if (!isset($result['code']) || $result['code'] != 2004) {
@@ -212,12 +213,13 @@ function thawani_payment_notification()
             }
 
             if ($trx) {
+                sendTelegram("thawani_payment_notification: \n\n" . json_encode($json, JSON_PRETTY_PRINT));
                 $user = ORM::for_table('tbl_customers')->where('username', $trx['username'])->find_one();
                 $result = json_decode(Http::getData(thawani_get_server() . '/checkout/session/' . $trx['gateway_trx_id'], [
                     'thawani-api-key: ' . $config['thawani_secret_key'],
                     'Content-Type: application/json'
                 ]), true);
-
+                // 1 unpaid 2 paid 3 failed 4 canceled
                 if ($result['data']['payment_status'] == 'paid') {
                     if (Package::rechargeUser($user['id'], $trx['routers'], $trx['plan_id'], $trx['gateway'], 'Thawani')) {
                         $trx->pg_paid_response = json_encode($result);
@@ -226,7 +228,27 @@ function thawani_payment_notification()
                         $trx->paid_date = date('Y-m-d H:i:s', strtotime($result['data']['created_at']));
                         $trx->status = 2;
                         $trx->save();
+                    }elseif ($result['data']['payment_status'] == 'unpaid'){
+                        $trx->pg_paid_response = json_encode($result);
+                        $trx->payment_method = 'Thawani';
+                        $trx->payment_channel = 'Thawani';
+                        $trx->paid_date = date('Y-m-d H:i:s', strtotime($result['data']['created_at']));
+                        $trx->status = 1;
+                        $trx->save();
+                    }elseif ($result['data']['payment_status'] == 'cancelled'){
+                        $trx->pg_paid_response = json_encode($result);
+                        $trx->payment_method = 'Thawani';
+                        $trx->payment_channel = 'Thawani';
+                        $trx->paid_date = date('Y-m-d H:i:s', strtotime($result['data']['created_at']));
+                        $trx->status = 4;
+                        $trx->save();
                     } else {
+                        $trx->pg_paid_response = json_encode($result);
+                        $trx->payment_method = 'Thawani';
+                        $trx->payment_channel = 'Thawani';
+                        $trx->paid_date = date('Y-m-d H:i:s', strtotime($result['data']['created_at']));
+                        $trx->status = 3;
+                        $trx->save();
                         Message::sendTelegram("thawani_payment_notification: Activation FAILED: \n\n" . json_encode($json, JSON_PRETTY_PRINT) . " \n\n" . json_encode($result, JSON_PRETTY_PRINT));
                         $msg = 'Failed to activate package';
                     }
