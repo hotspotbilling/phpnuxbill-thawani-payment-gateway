@@ -11,7 +11,6 @@ function thawani_validate_config()
 {
     global $config;
     if (empty($config['thawani_publishable_key']) || empty($config['thawani_secret_key']) || empty($config['thawani_testing_url']) || empty($config['thawani_live_url'])) {
-        Message::sendTelegram("Thawani payment gateway not configured");
         r2(U . 'order/package', 'w', Lang::T("Admin has not yet setup Thawani payment gateway, please tell admin"));
     }
 }
@@ -122,11 +121,9 @@ function thawani_create_transaction($trx, $user)
     ];
 
     $response = Http::postJsonData(thawani_get_server() . '/checkout/session', $json, $headers);
-    sendTelegram("thawani_create_transaction: \n\n" . json_encode($json, JSON_PRETTY_PRINT) . " \n\n" . $response);
     $result = json_decode($response, true);
 
     if (!isset($result['code']) || $result['code'] != 2004) {
-        Message::sendTelegram("thawani_create_transaction FAILED: \n\n" . json_encode($result, JSON_PRETTY_PRINT));
         r2(U . 'order/package', 'e', Lang::T("Failed to create transaction."));
     }
 
@@ -159,7 +156,6 @@ function thawani_get_status($trx, $user)
 
     if ($result['data']['payment_status'] == 'paid') {
         if (!Package::rechargeUser($user['id'], $trx['routers'], $trx['plan_id'], $trx['gateway'], 'Thawani')) {
-            Message::sendTelegram("thawani_get_status: Activation FAILED: \n\n" . json_encode($result, JSON_PRETTY_PRINT));
             r2(U . "order/view/" . $trx['id'], 'd', Lang::T("Failed to activate your Package, try again later."));
         }
 
@@ -187,7 +183,6 @@ function thawani_get_status($trx, $user)
         $trx->pg_paid_response = json_encode($result);
         $trx->status = 3;
         $trx->save();
-        Message::sendTelegram("thawani_get_status: Unknown result\n\n" . json_encode($result, JSON_PRETTY_PRINT));
         r2(U . "order/view/" . $trx['id'], 'd', Lang::T($result['description']));
     }
 }
@@ -213,7 +208,6 @@ function thawani_payment_notification()
             }
 
             if ($trx) {
-                sendTelegram("thawani_payment_notification: \n\n" . json_encode($json, JSON_PRETTY_PRINT));
                 $user = ORM::for_table('tbl_customers')->where('username', $trx['username'])->find_one();
                 $result = json_decode(Http::getData(thawani_get_server() . '/checkout/session/' . $trx['gateway_trx_id'], [
                     'thawani-api-key: ' . $config['thawani_secret_key'],
@@ -249,7 +243,6 @@ function thawani_payment_notification()
                         $trx->paid_date = date('Y-m-d H:i:s', strtotime($result['data']['created_at']));
                         $trx->status = 3;
                         $trx->save();
-                        Message::sendTelegram("thawani_payment_notification: Activation FAILED: \n\n" . json_encode($json, JSON_PRETTY_PRINT) . " \n\n" . json_encode($result, JSON_PRETTY_PRINT));
                         $msg = 'Failed to activate package';
                     }
                 } else {
