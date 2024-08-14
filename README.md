@@ -36,3 +36,16 @@ This plugin integrates the Thawani payment gateway with PHPNuxBill, a billing sy
 2. **Payment Notification**
 
    Thawani will send payment status notifications to the plugin, which will automatically update the transaction status in PHPNuxBill.
+
+
+## Screenshots
+
+### Screenshot 1
+![Screenshot 1](https://raw.githubusercontent.com/amolood/phpnuxbill-thawani-payment-gateway/main/2.png)
+
+### Screenshot 2
+![Screenshot 2](https://raw.githubusercontent.com/amolood/phpnuxbill-thawani-payment-gateway/main/3.png)
+
+### Screenshot 3
+![Screenshot 3](https://raw.githubusercontent.com/amolood/phpnuxbill-thawani-payment-gateway/main/4.png)
+
